@@ -1,5 +1,32 @@
+use std::process::Command;
 use std::{fs,env};
 use std::error::Error;
+
+#[derive(Debug,Clone)]
+pub struct CommandArgs {
+    ignoreCase: bool ,
+    nLine: bool, 
+    help: bool,
+}
+impl CommandArgs {
+    pub fn build(args: &[String]) -> Option<CommandArgs> {
+        if args.len() == 0 {
+            None
+        } else {
+        let mut ignoreCase = false;
+        let mut nLine = false;
+        let mut help = false;
+
+        if args.len() > 0 {
+            ignoreCase = args.contains(&String::from("--ignoreCase"));
+            nLine = args.contains(&String::from("-n"));
+            help = args.contains(&String::from("--help"));
+        }
+
+        Some( CommandArgs { ignoreCase, nLine, help } )
+    }
+    }
+}
 
 #[derive(Debug)]
 pub struct Argumentos {
@@ -9,68 +36,79 @@ pub struct Argumentos {
     query: String,
     ruta: String,
     ignore_case: bool,
+    argum: Option<CommandArgs>,
 }
 impl Argumentos {
     pub fn build(args: &Vec<String>) -> Result<Argumentos, &'static str> {
-        if args.len() > 3 {
-            return Err("rgrep solo acepta 2 argumentos\npara más información ver rgrep --help");
-        } else if args.len() <= 2 {
-            return Err("debes especificar un archivo\npara más información ver rgrep --help");
+        if args.len() <= 2 {
+            return Err("debes especificar un patron y un archivo\npara más información ver rgrep --help");
         } else {    
             // args0 ignored as it is the program name
             let query = &args[1];
             let path = &args[2];
             let ignore_case = env::var("IGNORE_CASE").is_ok();
+            let argum =  CommandArgs::build(&args[3..]);
+            
             // devolvemos un struct de argumentos
             Ok(
                 Argumentos {
                     query: query.clone(),
                     ruta: path.clone(),
-                    ignore_case,
+                    ignore_case, //enviroment variable
+                    argum: argum,
                 }
             )
         }
     }
 }
 
-
 // lee y guarda los contenidos de un archivo
 // recibe una ref a un argumento, lee su ruta y devuelve un string o un error
-pub fn read_file(argumentos: &Argumentos) -> Result<(),Box<dyn Error>> {
+pub fn ejecuta(argumentos: &Argumentos) -> Result<(),Box<dyn Error>> {
 
     let contenido = fs::read_to_string(&argumentos.ruta)?;
-    let results = if argumentos.ignore_case{
+    let other_args = &argumentos.argum.as_ref().unwrap();
+    let results = if argumentos.ignore_case || other_args.ignoreCase{
         busqueda_in(&argumentos.query, &contenido)
-    } else {
+    } else{
         busqueda(&argumentos.query, &contenido)
     };
-    for linea in results{
-        println!("{linea}");
+    // arreglar cuando no se introducen args adicionales
+    if other_args.nLine {
+        for linea in results{
+            // aqui decidir si se printa o no el n lineas
+            println!("{}--{}",linea.0,linea.1);
+        }
+    } else {
+        for linea in results{
+            // aqui decidir si se printa o no el n lineas
+            println!("{}",linea.1);
+        }
     }
+
     Ok(())
 }
-// ToDo:
-// - 
-pub fn busqueda_in<'a>(query: &str, contenido: &'a str) -> Vec<&'a str> {
+// busqueda ignorando mayus
+pub fn busqueda_in<'a>(query: &str, contenido: &'a str) -> Vec<(usize,&'a str)> {
     let query = query.to_lowercase();
     let mut content = Vec::new();
 
-    for line in contenido.lines() {
+    for (i,line) in contenido.lines().enumerate() {
         if line.to_lowercase().contains(&query){
-            content.push(line.clone())
+            content.push((i,line.clone()))
         }
          
     }
     content
 }
 
-pub fn busqueda<'a>(query: &str, contenido: &'a str) -> Vec<&'a str> {
+pub fn busqueda<'a>(query: &str, contenido: &'a str) -> Vec<(usize,&'a str)> {
 
     let mut content = Vec::new();
 
-    for line in contenido.lines() {
+    for (i,line) in contenido.lines().enumerate() {
         if line.contains(query){
-            content.push(line.clone())
+            content.push((i,line.clone()))
         }
          
     }
