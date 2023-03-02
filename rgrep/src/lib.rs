@@ -67,13 +67,15 @@ impl Argumentos {
 pub fn ejecuta(argumentos: &Argumentos) -> Result<(),Box<dyn Error>> {
 
     let contenido = fs::read_to_string(&argumentos.ruta)?;
-    let other_args = &argumentos.argum.as_ref().unwrap();
+    // solucion ineficiente, poco idiomatica y poco generalizable pero hay que probar cosas en esta vida
+    let other_args = &argumentos.argum.as_ref().unwrap_or_else(|| 
+        &CommandArgs { ignoreCase: false, nLine: false, help: false });
     let results = if argumentos.ignore_case || other_args.ignoreCase{
         busqueda_in(&argumentos.query, &contenido)
     } else{
         busqueda(&argumentos.query, &contenido)
     };
-    // arreglar cuando no se introducen args adicionales
+
     if other_args.nLine {
         for linea in results{
             // aqui decidir si se printa o no el n lineas
