@@ -49,11 +49,7 @@ impl Lines {
 pub fn run(argumentos: &Argumentos) -> Result<(),Box<dyn Error>> {
 
     let contenido = fs::read_to_string(&argumentos.haystack)?;
-    let results = if argumentos.ignore_case {
-        search_needle_ic(&argumentos.needle, &contenido)
-    } else{
-        search_needle(&argumentos.needle, &contenido)
-    };
+    let results = search_needle(&argumentos.needle, &contenido, argumentos.ignore_case);
 
     for line in results {
         println!("{}-   {}",line.n_line,line.content)
@@ -62,26 +58,25 @@ pub fn run(argumentos: &Argumentos) -> Result<(),Box<dyn Error>> {
 
     Ok(())
 }
-// busqueda ignorando mayus
-fn search_needle_ic<'a>(query: &str, contenido: &'a str) -> Vec<Lines> {
-    let query = query.to_lowercase();
-    let mut content = Vec::new();
 
-    for (i,line) in contenido.lines().enumerate() {
-        if line.to_lowercase().contains(&query){
-            content.push(Lines::new(i+1,line))
-        }
-         
-    }
-    content
-}
+fn search_needle<'a>(query: &str, contenido: &'a str, ignore_case: bool) -> Vec<Lines> {
 
-fn search_needle<'a>(query: &str, contenido: &'a str) -> Vec<Lines> {
+    let query = if ignore_case {
+        query.to_lowercase()
+    } else {
+        query.to_string()
+    };
 
     let mut content = Vec::new();
 
     for (i,line) in contenido.lines().enumerate() {
-        if line.contains(query){
+        let line_to_check = if ignore_case {
+            line.to_lowercase()
+        } else {
+            line.to_owned()
+        };
+
+        if line_to_check.contains(&query){
             content.push(Lines::new(i+1,line))
         }
          
@@ -94,7 +89,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn encuentra_uno() {
+    fn find_case_sens() {
         let query = "mancha";
         let contenido = r"\ 
 en un lugar de la mancha
@@ -103,12 +98,12 @@ vivía un hidalgo
 ...";
         assert_eq!(
             vec![Lines{n_line:2,content:"en un lugar de la mancha".to_string()}], 
-            search_needle(query, contenido),
+            search_needle(query, contenido, false),
             "comprobando que devuelve las lineas que contienen la 'query'");
     }
 
     #[test]
-    fn case_insensitive() {
+    fn find_case_ins() {
         let query = "mancha";
         let contenido = r"\ 
 en un lugar de la MANCHA
@@ -123,7 +118,7 @@ vivía un hidalgo
                     n_line:3,
                     content:"de cuya mancha no quiero acordarme".to_string()}
                 ], 
-            search_needle_ic(query, contenido),
+            search_needle(query, contenido, true),
             "devuelve las lineas que contienen la 'query' ya sea en mayuscual o min");
     }
 }
