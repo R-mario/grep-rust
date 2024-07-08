@@ -1,6 +1,6 @@
 use std::{env,process}; // needed for reading cmd
 
-use rgrep::*;
+pub use rgrep::*;
 
 fn main() {
     // recoge args y los transforma en vector
@@ -8,11 +8,15 @@ fn main() {
     let args: Vec<String> = env::args().collect(); 
     let argumentos = Argumentos::build(&args)
         .unwrap_or_else(|err| {
-            eprintln!("error procesando los argumentos\n{}",err);
+            eprintln!("Error with the input parameters\n{}",err);
             process::exit(1);
         });
-    if let Err(e) = ejecuta(&argumentos) {
-        eprintln!("Error leyendo archivo: {e}");
+
+    println!("Reading file `{}`",argumentos.haystack);
+    println!("Sarching for `{}`...",argumentos.needle);
+
+    if let Err(e) = run(&argumentos) {
+        eprintln!("Error reading file: {e}");
         process::exit(1);
     }
 }
