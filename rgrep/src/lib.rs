@@ -34,6 +34,16 @@ impl Argumentos {
     }
 }
 
+#[derive(PartialEq,Debug)]
+struct Lines {
+    n_line: usize,
+    content: String
+}
+impl Lines {
+    fn new(n: usize, line: &str) -> Lines {
+        Lines {n_line: n, content: line.to_string()}
+    }
+}
 /// lee y guarda los contenidos de un archivo
 /// recibe una ref a un argumento, lee su ruta y devuelve un string o un error
 pub fn run(argumentos: &Argumentos) -> Result<(),Box<dyn Error>> {
@@ -45,34 +55,34 @@ pub fn run(argumentos: &Argumentos) -> Result<(),Box<dyn Error>> {
         search_needle(&argumentos.needle, &contenido)
     };
 
-    for (n, line) in results {
-        println!("{}-   {}",n,line)
+    for line in results {
+        println!("{}-   {}",line.n_line,line.content)
     }
 
 
     Ok(())
 }
 // busqueda ignorando mayus
-pub fn search_needle_ic<'a>(query: &str, contenido: &'a str) -> Vec<(usize,&'a str)> {
+fn search_needle_ic<'a>(query: &str, contenido: &'a str) -> Vec<Lines> {
     let query = query.to_lowercase();
     let mut content = Vec::new();
 
     for (i,line) in contenido.lines().enumerate() {
         if line.to_lowercase().contains(&query){
-            content.push((i+1,line))
+            content.push(Lines::new(i+1,line))
         }
          
     }
     content
 }
 
-pub fn search_needle<'a>(query: &str, contenido: &'a str) -> Vec<(usize,&'a str)> {
+fn search_needle<'a>(query: &str, contenido: &'a str) -> Vec<Lines> {
 
     let mut content = Vec::new();
 
     for (i,line) in contenido.lines().enumerate() {
         if line.contains(query){
-            content.push((i+1,line))
+            content.push(Lines::new(i+1,line))
         }
          
     }
@@ -92,7 +102,7 @@ de cuyo nombre no quiero acordarme
 vivía un hidalgo
 ...";
         assert_eq!(
-            vec![(2,"en un lugar de la mancha")], 
+            vec![Lines{n_line:2,content:"en un lugar de la mancha".to_string()}], 
             search_needle(query, contenido),
             "comprobando que devuelve las lineas que contienen la 'query'");
     }
@@ -106,7 +116,13 @@ de cuya mancha no quiero acordarme
 vivía un hidalgo
 ...";
         assert_eq!(
-            vec![(2,"en un lugar de la MANCHA"),(3,"de cuya mancha no quiero acordarme")], 
+            vec![Lines{
+                    n_line:2,
+                    content:"en un lugar de la MANCHA".to_string()},
+                Lines{
+                    n_line:3,
+                    content:"de cuya mancha no quiero acordarme".to_string()}
+                ], 
             search_needle_ic(query, contenido),
             "devuelve las lineas que contienen la 'query' ya sea en mayuscual o min");
     }
