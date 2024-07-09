@@ -50,11 +50,13 @@ pub fn run(argumentos: &Argumentos) -> Result<(),Box<dyn Error>> {
 
     let contenido = fs::read_to_string(&argumentos.haystack)?;
     let results = search_needle(&argumentos.needle, &contenido, argumentos.ignore_case);
-
-    for line in results {
-        println!("{}-   {}",line.n_line,line.content)
+    if results.len() == 0 {
+        println!("There is no match.")
+    } else {
+        for line in results {
+            println!("{}-   {}",line.n_line,line.content)
+        }
     }
-
 
     Ok(())
 }

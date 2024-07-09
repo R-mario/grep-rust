@@ -13,7 +13,7 @@ fn main() {
         });
 
     println!("Reading file `{}`",argumentos.haystack);
-    println!("Sarching for `{}`...",argumentos.needle);
+    println!("Sarching for `{}`\n...",argumentos.needle);
 
     if let Err(e) = run(&argumentos) {
         eprintln!("Error reading file: {e}");
